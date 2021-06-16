@@ -5,8 +5,11 @@
 package it.polito.tdp.imdb;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Set;
 
+import it.polito.tdp.imdb.model.Actor;
 import it.polito.tdp.imdb.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -35,10 +38,10 @@ public class FXMLController {
     private Button btnSimulazione; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxGenere"
-    private ComboBox<?> boxGenere; // Value injected by FXMLLoader
+    private ComboBox<String> boxGenere; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxAttore"
-    private ComboBox<?> boxAttore; // Value injected by FXMLLoader
+    private ComboBox<Actor> boxAttore; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtGiorni"
     private TextField txtGiorni; // Value injected by FXMLLoader
@@ -48,17 +51,62 @@ public class FXMLController {
 
     @FXML
     void doAttoriSimili(ActionEvent event) {
-
+    	this.txtResult.clear();
+    	if(!model.isGrafoCreato()) {
+    		this.txtResult.setText("Errore, crea grafo");
+    		return;
+    	}
+    	Actor a = this.boxAttore.getValue();
+    	if (a==null) {
+    		this.txtResult.setText("Errore, seleziona un attore");
+    		return;
+    	}
+    	this.txtResult.setText("Attori raggiungibili:\n");
+    	List<Actor> raggiungibili= model.raggiungibili(a);
+    	for (Actor act : raggiungibili){
+    		this.txtResult.appendText(act.toString()+"\n");
+    	}
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
-
+    	this.txtResult.clear();
+    	String genere=this.boxGenere.getValue();
+    	if (genere==null) {
+    		this.txtResult.setText("Errore, selezionere un genere");
+    		return;
+    	}
+    	model.creaGrafo(genere);
+    	this.txtResult.setText("GRAFO CREATO");
+    	this.txtResult.appendText("\n#Vertici: "+model.getNumVertici());
+    	this.txtResult.appendText("\n#Archi: "+model.getNumArchi());
+    	this.boxAttore.getItems().clear();
+    	this.boxAttore.getItems().addAll(model.getVertici());
     }
 
     @FXML
     void doSimulazione(ActionEvent event) {
-
+    	this.txtResult.clear();
+    	if(!model.isGrafoCreato()) {
+    		this.txtResult.setText("Errore, crea grafo");
+    		return;
+    	}
+    	String genere=this.boxGenere.getValue();
+    	if (genere==null) {
+    		this.txtResult.setText("Errore, selezionere un genere");
+    		return;
+    	}
+    	String nString=this.txtGiorni.getText();
+    	int n;
+    	try {
+    		n= Integer.parseInt(nString);
+    	} catch(NumberFormatException e ) {
+    		this.txtResult.setText("Errore, inserire un numero di giorni");
+    		return;
+    	}
+    	model.simula(n, genere);
+    	this.txtResult.setText("Sono stati intervistati "+model.numAttoriIntervistati()+" attori\n");
+    	this.txtResult.appendText("e sono state effettuate "+model.numPause()+" pause\n");
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -75,5 +123,6 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	this.boxGenere.getItems().addAll(model.getAllGenres());
     }
 }
